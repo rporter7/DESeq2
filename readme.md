@@ -1,0 +1,1 @@
+The goal of this program is to take the output of a RNAseq pipeline, which is a count matrix, and enable the user to analyze differentially expressed genes.
