@@ -59,7 +59,7 @@ res1 <- as.data.frame(DGE.results)
 volcano_dataframe <- cbind(res1,labels)
 volcano_dataframe_ordered <- volcano_dataframe[order(volcano_dataframe$padj), ]
   
-#volcano plot
+#basic volcano plot
 library(EnhancedVolcano)
 EnhancedVolcano(volcano_dataframe_ordered,
                 lab = volcano_dataframe_ordered$description,
@@ -74,14 +74,18 @@ EnhancedVolcano(volcano_dataframe_ordered,
                 col=c('black', 'black', 'black', 'royalblue'),
                 colAlpha = 0.75)
 
-#Load ggplot and ggrepel
+
+#more advanced volcano plot
+
+#Load libraries
 library(ggplot2)
 library(ggrepel)
-
+library(scales)
+library(gganimate)
 #Volcano Plots of Differentially expressed genes; signifance threshold can be changed as needed.
 ggplot(volcano_dataframe_ordered) +
   geom_point(aes(x = log2FoldChange, y = -log10(padj), colour = padj < 0.05)) +
-  geom_text_repel(aes(x = log2FoldChange, y = -log10(padj), label = ifelse(log2FoldChange > 1 & padj<0.00000000000000000000000001, description,""))) +
+  geom_text_repel(aes(x = log2FoldChange, y = -log10(padj), label = ifelse(padj<0.1E-50, description,""))) +
   ggtitle("Eve RNAi overexpression") +
   xlab("log2 fold change") + 
   ylab("-log10 adjusted p-value") +
@@ -89,22 +93,31 @@ ggplot(volcano_dataframe_ordered) +
         plot.title = element_text(size = rel(1.5), hjust = 0.5),
         axis.title = element_text(size = rel(1.25)))
 
+#more simplified background and axis
 ggplot(volcano_dataframe_ordered) +
   geom_point(aes(x = log2FoldChange, y = -log10(padj), colour = padj < 0.05)) +
-  geom_text_repel(aes(x = log2FoldChange, y = -log10(padj), label = ifelse(log2FoldChange > 1 & padj<0.00000000000000000000000001, description,""))) +
+  geom_text_repel(aes(x = log2FoldChange, y = -log10(padj), label = ifelse(padj<1E-50, description,""))) +
   ggtitle("Eve RNAi overexpression") +
   xlab("log2 fold change") + 
   ylab("-log10 adjusted p-value") +
-  theme(legend.position = "none",
+  theme(panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "grey92"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid', colour = "grey92"),
+        legend.position = "none",
         plot.title = element_text(size = rel(1.5), hjust = 0.5),
         axis.title = element_text(size = rel(1.25)))
 
-ggplot(volcano_dataframe_ordered) +
+#transition_reveal() (slider up and down)
+#transitions need omitted cells gone
+omitted_volcanodf <-na.omit(volcano_dataframe_ordered)
+ggplot(data = omitted_volcanodf,
+       aes(x = log2FoldChange, y = -log10(padj))) +
   geom_point(aes(x = log2FoldChange, y = -log10(padj), colour = padj < 0.05)) +
-  geom_text_repel(aes(x = log2FoldChange, y = -log10(padj), label = ifelse(log2FoldChange < -1 & padj<0.00000000000000000000000001, description,""))) +
+  geom_text_repel(aes(x = log2FoldChange, y = -log10(padj), label = ifelse(padj<1E-50, description,""))) +
   ggtitle("Eve RNAi overexpression") +
   xlab("log2 fold change") + 
   ylab("-log10 adjusted p-value") +
-  theme(legend.position = "none",
-        plot.title = element_text(size = rel(1.5), hjust = 0.5),
-        axis.title = element_text(size = rel(1.25)))
+  transition_time(-log10(padj)) +
+  shadow_mark()
+anim_save(filename = "volcano_reveal.gif")
